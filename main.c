@@ -14,10 +14,13 @@ void my_init_var2(void);
 void my_make_block(void);
 void my_gameover(void);
 void my_get_key(void);
+void my_turn_right(void);
+void my_turn_left(void);
 void my_collision_left(void);
 void my_collision_right(void);
 void my_collision_bottom(void);
 void my_collision_center(void);
+void my_collision_turn(void);
 void my_fix_block(void);
 void my_search_line(void);
 void my_clear_line(void);
@@ -30,6 +33,7 @@ void my_fall_block(void);
 void my_timer(void);
 
 int block[BLOCK_HEIGHT][BLOCK_WIDTH];
+int turn_block[BLOCK_HEIGHT][BLOCK_WIDTH];
 int stage[FIELD_HEIGHT][FIELD_WIDTH];
 int field[FIELD_HEIGHT][FIELD_WIDTH];
 
@@ -75,6 +79,7 @@ int make_block_flag;
 int clear_flag;
 int block_id;
 int clear_count;
+int turn_point;
 
 int main(){
 	my_init_var();
@@ -128,6 +133,7 @@ void my_init_var(){
 	clear_flag = 0;
 	block_id = 0;
 	clear_count = 0;
+	turn_point = 0;
 
 	srand((unsigned)time(NULL));
 }
@@ -136,6 +142,7 @@ void my_init_var2(){
 	block_x = 7;
 	block_y = 0;
 	make_block_flag = 1;
+	turn_point = 0;
 }
 
 void my_make_block(){
@@ -187,9 +194,63 @@ void my_get_key(){
 					my_collision_bottom();
 				}
 				break;
+			case 0x48:
+				my_turn_right();
+				break;
+			case 'z':
+				my_turn_left();
+				break;
 			default:
 				break;
 		}
+	}
+}
+
+void my_turn_right(){
+	int x,y;
+
+	turn_point++;
+
+	for(y=0;y<BLOCK_HEIGHT;y++){
+		for(x=0;x<BLOCK_WIDTH;x++){
+			turn_block[y][x] = blocks[(block_id * BLOCK_HEIGHT) + y][(turn_point % 4 * BLOCK_WIDTH) + x];
+		}
+	}
+
+	my_collision_turn();
+
+	if(collision_flag == 0){
+		for(y=0;y<BLOCK_HEIGHT;y++){
+			for(x=0;x<BLOCK_WIDTH;x++){
+				block[y][x] = turn_block[y][x];
+			}
+		}
+	}else{
+		turn_point--;
+	}
+}
+
+void my_turn_left(){
+	int x,y;
+
+	turn_point += 3;
+
+	for(y=0;y<BLOCK_HEIGHT;y++){
+		for(x=0;x<BLOCK_WIDTH;x++){
+			turn_block[y][x] = blocks[(block_id * BLOCK_HEIGHT) + y][(turn_point % 4 * BLOCK_WIDTH) + x];
+		}
+	}
+
+	my_collision_turn();
+
+	if(collision_flag == 0){
+		for(y=0;y<BLOCK_HEIGHT;y++){
+			for(x=0;x<BLOCK_WIDTH;x++){
+				block[y][x] = turn_block[y][x];
+			}
+		}
+	}else{
+		turn_point -= 3;
 	}
 }
 
@@ -249,6 +310,22 @@ void my_collision_center(){
 	for(y=0;y<BLOCK_HEIGHT;y++){
 		for(x=0;x<BLOCK_WIDTH;x++){
 			if(block[y][x] != 0){
+				if(stage[block_y + y][block_x + x] != 0){
+					collision_flag = 1;
+				}
+			}
+		}
+	}
+}
+
+void my_collision_turn(){
+	int x,y;
+
+	collision_flag = 0;
+
+	for(y=0;y<BLOCK_HEIGHT;y++){
+		for(x=0;x<BLOCK_WIDTH;x++){
+			if(turn_block[y][x] != 0){
 				if(stage[block_y + y][block_x + x] != 0){
 					collision_flag = 1;
 				}
